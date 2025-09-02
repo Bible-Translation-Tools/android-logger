@@ -1,39 +1,17 @@
-apply plugin: 'com.android.library'
+import com.vanniktech.maven.publish.SonatypeHost
 
-
-ext {
-    bintrayRepo = 'maven'
-    bintrayName = 'logger'
-
-    publishedGroupId = 'org.unfoldingword.tools'
-    libraryName = 'Logger'
-    artifact = 'logger'
-
-    libraryDescription = 'A better logging tool for Android'
-
-    siteUrl = 'https://github.com/unfoldingWord-dev/android-logger'
-    gitUrl = 'https://github.com/unfoldingWord-dev/android-logger.git'
-
-    libraryVersion = '2.3.0'
-
-    developerId = 'neutrinog'
-    developerName = 'Joel Lonbeck'
-    developerEmail = 'joel@neutrinographics.com'
-
-    licenseName = 'The MIT License (MIT)'
-    licenseUrl = 'https://opensource.org/licenses/mit-license.php'
-    allLicenses = ["MIT"]
+plugins {
+    id "com.android.library"
+    id "com.vanniktech.maven.publish"
 }
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "22.0.1"
+    compileSdk = 36
 
     defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 22
-        versionCode 9
-        versionName "2.3.0"
+        namespace "org.bibletranslationtools.logger"
+        minSdkVersion 16
+        targetSdkVersion 36
     }
     buildTypes {
         release {
@@ -44,10 +22,44 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
-    compile 'org.unfoldingword.tools:http:2.3.0'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    testImplementation 'junit:junit:4.13.2'
+    implementation 'org.unfoldingword.tools:http:2.5.0'
 }
 
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+mavenPublishing {
+    coordinates("org.bibletranslationtools", "logger", "2.3.1")
+
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
+
+    pom {
+        name = "Logger"
+        description = "A better logging tool for Android"
+        inceptionYear = "2025"
+        url = "https://github.com/bibletranslationtools/android-logger/"
+        licenses {
+            license {
+                name = "GNU GENERAL PUBLIC LICENSE, Version 2.0"
+                url = "http://www.gnu.org/licenses/gpl-2.0.en.html"
+                distribution = "repo"
+            }
+        }
+        developers {
+            developer {
+                id = "bibletranslationtools"
+                name = "BibleTranslationTools"
+                url = "https://github.com/bibletranslationtools/"
+            }
+        }
+        scm {
+            url = "https://github.com/bibletranslationtools/android-logger/"
+            connection = "scm:git:git://github.com/bibletranslationtools/android-logger.git"
+            developerConnection = "scm:git:ssh://git@github.com/bibletranslationtools/android-logger.git"
+        }
+        issueManagement {
+            url = "https://github.com/bibletranslationtools/android-logger/issues"
+            system = "github"
+        }
+    }
+}

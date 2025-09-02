@@ -163,17 +163,17 @@ public class GithubReporter {
         try {
             json.put("title", title);
             json.put("body",body);
-            JSONArray labelsJson = new JSONArray();
-            for(String label:labels) {
-                labelsJson.put(label);
-            }
-            try {
-                PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-                labelsJson.put(pInfo.versionName);
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
-            }
-            json.put("labels", labelsJson);
+//            JSONArray labelsJson = new JSONArray();
+//            for(String label:labels) {
+//                labelsJson.put(label);
+//            }
+//            try {
+//                PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+//                labelsJson.put(pInfo.versionName);
+//            } catch (PackageManager.NameNotFoundException e) {
+//                e.printStackTrace();
+//            }
+//            json.put("labels", labelsJson);
         } catch (JSONException e) {
             e.printStackTrace();
         }
