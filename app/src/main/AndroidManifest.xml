@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.unfoldingword.logger">
+    package="org.bibletranslationtools.logger">
 
     <application
         android:allowBackup="true"
