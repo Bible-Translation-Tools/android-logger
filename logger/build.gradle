@@ -1,17 +1,47 @@
-import com.vanniktech.maven.publish.SonatypeHost
-
 plugins {
     id "com.android.library"
-    id "com.vanniktech.maven.publish"
+    id "org.jetbrains.kotlin.multiplatform"
+    id "org.jetbrains.kotlin.plugin.serialization"
+    id "maven-publish"
+}
+
+group = "org.bibletranslationtools"
+version = "3.0.0"
+
+kotlin {
+    jvmToolchain(11)
+
+    androidTarget {
+        publishLibraryVariants("release")
+    }
+    jvm()
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0"
+                implementation 'io.ktor:ktor-client-core:3.4.2'
+                implementation 'io.ktor:ktor-client-okhttp:3.4.2'
+                implementation 'io.ktor:ktor-client-content-negotiation:3.4.2'
+                implementation 'io.ktor:ktor-serialization-kotlinx-json:3.4.2'
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("io.ktor:ktor-client-mock:3.4.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+            }
+        }
+    }
 }
 
 android {
-    compileSdk = 36
-
+    namespace "org.bibletranslationtools.logger"
+    compileSdk = 35
     defaultConfig {
-        namespace "org.bibletranslationtools.logger"
-        minSdkVersion 16
-        targetSdkVersion 36
+        minSdk 21
     }
     buildTypes {
         release {
@@ -19,47 +49,57 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    testImplementation 'junit:junit:4.13.2'
-    implementation 'org.unfoldingword.tools:http:2.5.0'
-}
-
-mavenPublishing {
-    coordinates("org.bibletranslationtools", "logger", "2.3.1")
-
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
-    signAllPublications()
-
-    pom {
-        name = "Logger"
-        description = "A better logging tool for Android"
-        inceptionYear = "2025"
-        url = "https://github.com/bibletranslationtools/android-logger/"
-        licenses {
-            license {
-                name = "GNU GENERAL PUBLIC LICENSE, Version 2.0"
-                url = "http://www.gnu.org/licenses/gpl-2.0.en.html"
-                distribution = "repo"
-            }
-        }
-        developers {
-            developer {
-                id = "bibletranslationtools"
-                name = "BibleTranslationTools"
-                url = "https://github.com/bibletranslationtools/"
-            }
-        }
-        scm {
+publishing {
+    publications.withType(MavenPublication).configureEach {
+        groupId = group
+        version = version
+        pom {
+            name = "Logger"
+            description = "A better logging tool for Android"
+            inceptionYear = "2025"
             url = "https://github.com/bibletranslationtools/android-logger/"
-            connection = "scm:git:git://github.com/bibletranslationtools/android-logger.git"
-            developerConnection = "scm:git:ssh://git@github.com/bibletranslationtools/android-logger.git"
+            licenses {
+                license {
+                    name = "GNU GENERAL PUBLIC LICENSE, Version 2.0"
+                    url = "http://www.gnu.org/licenses/gpl-2.0.en.html"
+                    distribution = "repo"
+                }
+            }
+            developers {
+                developer {
+                    id = "bibletranslationtools"
+                    name = "BibleTranslationTools"
+                    url = "https://github.com/bibletranslationtools/"
+                }
+            }
+            scm {
+                url = "https://github.com/bibletranslationtools/android-logger/"
+                connection = "scm:git:git://github.com/bibletranslationtools/android-logger.git"
+                developerConnection = "scm:git:ssh://git@github.com/bibletranslationtools/android-logger.git"
+            }
+            issueManagement {
+                url = "https://github.com/bibletranslationtools/android-logger/issues"
+                system = "github"
+            }
         }
-        issueManagement {
-            url = "https://github.com/bibletranslationtools/android-logger/issues"
-            system = "github"
+    }
+
+    repositories {
+        maven {
+            name = "Nexus"
+            url = version.endsWith('SNAPSHOT')
+                ? "https://nexus-registry.walink.org/repository/maven-snapshots"
+                : "https://nexus-registry.walink.org/repository/maven-releases"
+
+            credentials {
+                username = project.findProperty("repoUser") ?: System.getenv("REPO_USER")
+                password = project.findProperty("repoPassword") ?: System.getenv("REPO_PASSWORD")
+            }
         }
     }
 }

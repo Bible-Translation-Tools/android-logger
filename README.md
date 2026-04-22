@@ -6,7 +6,7 @@ To use this library your Android project must be configured to use the JCenter o
 
 Add the following to your package dependencies and sync gradle.
 ```
-implementation 'org.unfoldingword.tools:logger:2.3.1'
+implementation 'org.bibletranslationtools:logger:2.3.2'
 ```
 
 ##Set up Global Exception Handler
