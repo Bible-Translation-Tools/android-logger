@@ -2,11 +2,11 @@
 An advanced logging library that provides support for writing logs to a file and catching global application exceptions.
 
 ##Installation
-To use this library your Android project must be configured to use the JCenter or Maven Central repositories.
+To use this library your Android project must be configured to use the Maven Central repositories.
 
-Add the following to your package dependencies and sync gradle.
+Add the following to your package dependencies and sync Gradle.
 ```
-implementation 'org.unfoldingword.tools:logger:2.3.1'
+implementation 'org.bibletranslationtools:logger:3.0.0'
 ```
 
 ##Set up Global Exception Handler
@@ -34,7 +34,7 @@ Logger.configure(pathToLogFile, minimumAllowdLogLevel);
 The first argument gives the path to the log file that will be written to. The second argument is the lower log level that will be processed.
 
 ##Usage
-The Logger is a singleton so to use it you simply call one of it's static log methods
+The Logger is a singleton so to use it you simply call one of its static log methods
 
 ```
 Logger.e(tag, message, throwable);
@@ -49,4 +49,16 @@ There are other public methods that allow you to retrieve a list of log objects,
 List<LogEntry> logsEntries = <Logger.getLogEntries();
 List<LogEntry> logsEntries = <Logger.getLogEntries();
 Logger.flush();
+```
+
+To send reports to GitHub, use GithubReporter class by specifying the platform context, oauth token and repo url
+
+```Android
+val context = application
+val reporter = GithubReporter(url, token, context)
+```
+
+```Desktop
+val context = Context(versionName = "1.6.0", udid = "build-123")
+val reporter = GithubReporter(url, token, context)
 ```
