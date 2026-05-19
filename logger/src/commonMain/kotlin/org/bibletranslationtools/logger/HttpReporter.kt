@@ -2,6 +2,7 @@ package org.bibletranslationtools.logger
 
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -15,43 +16,70 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
-class GithubReporter(
-    private val repositoryUrl: String,
-    private val githubOauth2Token: String,
-    private val context: PlatformContext,
-    private val client: HttpClient = HttpClient {
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true })
-        }
+@Serializable
+private data class JsonBody(val title: String, val body: String)
+
+private fun defaultClient() = HttpClient {
+    install(ContentNegotiation) {
+        json(Json { ignoreUnknownKeys = true })
     }
+}
+
+class HttpReporter(
+    private val url: String,
+    private val context: PlatformContext,
+    private val client: HttpClient = defaultClient(),
+    private val configureRequest: HttpRequestBuilder.(title: String, body: String) -> Unit
 ) {
-
-    @Serializable
-    private data class GithubIssue(val title: String, val body: String)
-
     companion object {
         private const val MAX_TITLE_LENGTH = 50
         private const val DEFAULT_CRASH_TITLE = "crash report"
         private const val DEFAULT_BUG_TITLE = "bug report"
-    }
 
-    private suspend fun submit(title: String, body: String): HttpResponse {
-        return client.post(repositoryUrl) {
-            header(HttpHeaders.Authorization, "token $githubOauth2Token")
+        fun bearer(
+            url: String,
+            token: String,
+            context: PlatformContext,
+            client: HttpClient = defaultClient()
+        ) = HttpReporter(url, context, client) { title, body ->
+            header(HttpHeaders.Authorization, "Bearer $token")
             contentType(ContentType.Application.Json)
-            setBody(GithubIssue(title, body))
+            setBody(JsonBody(title, body))
+        }
+
+        fun apiKey(
+            url: String,
+            headerName: String,
+            key: String,
+            context: PlatformContext,
+            client: HttpClient = defaultClient()
+        ) = HttpReporter(url, context, client) { title, body ->
+            header(headerName, key)
+            contentType(ContentType.Application.Json)
+            setBody(JsonBody(title, body))
+        }
+
+        fun noAuth(
+            url: String,
+            context: PlatformContext,
+            client: HttpClient = defaultClient()
+        ) = HttpReporter(url, context, client) { title, body ->
+            contentType(ContentType.Application.Json)
+            setBody(JsonBody(title, body))
         }
     }
 
-    /**
-     * Creates a crash issue on GitHub.
-     */
+    private suspend fun submit(title: String, body: String): HttpResponse {
+        return client.post(url) {
+            configureRequest(title, body)
+        }
+    }
+
     suspend fun reportCrash(notes: String, stacktraceFile: File, logFile: File? = null): Boolean {
         val stacktrace = stacktraceFile.readText()
         val log = if (logFile?.exists() == true) {
             runCatching { logFile.readText() }.getOrNull()
         } else null
-
         return reportCrash(notes, stacktrace, log)
     }
 
@@ -63,15 +91,9 @@ class GithubReporter(
             append(getStacktraceBlock(stacktrace))
             append(getLogBlock(log))
         }
-
-        val response = submit(title, body)
-        return response.status.isSuccess()
+        return submit(title, body).status.isSuccess()
     }
 
-    /**
-     * Creates a bug issue on GitHub.
-     * Combined Java overloads using nullable/default arguments.
-     */
     suspend fun reportBug(notes: String, logFile: File? = null): Boolean {
         val log = if (logFile?.exists() == true) {
             runCatching { logFile.readText() }.getOrNull()
@@ -86,9 +108,7 @@ class GithubReporter(
             append(getEnvironmentBlock(context))
             append(getLogBlock(log))
         }
-
-        val response = submit(title, body)
-        return response.status.isSuccess()
+        return submit(title, body).status.isSuccess()
     }
 
     private fun getLogBlock(log: String?): String = buildString {

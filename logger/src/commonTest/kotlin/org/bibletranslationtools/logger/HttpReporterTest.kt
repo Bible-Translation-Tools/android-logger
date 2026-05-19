@@ -17,7 +17,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import kotlin.test.*
 
-class GithubReporterTest {
+class HttpReporterTest {
 
     private val repoUrl = "https://api.github.com/repos/test/repo/issues"
     private val token = "test-token"
@@ -29,7 +29,7 @@ class GithubReporterTest {
     private fun makeReporter(
         status: HttpStatusCode,
         onCapture: ((CapturedRequest) -> Unit)? = null
-    ): GithubReporter {
+    ): HttpReporter {
         val engine = MockEngine { request ->
             val bodyBytes = (request.body as? OutgoingContent.ByteArrayContent)?.bytes() ?: byteArrayOf()
             onCapture?.invoke(
@@ -48,7 +48,7 @@ class GithubReporterTest {
         val client = HttpClient(engine) {
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
         }
-        return GithubReporter(repoUrl, token, context, client)
+        return HttpReporter.bearer(repoUrl, token, context, client)
     }
 
     private fun bodyField(captured: CapturedRequest): String =
@@ -92,7 +92,7 @@ class GithubReporterTest {
     fun reportCrashSendsAuthorizationHeader() = runTest {
         var captured: CapturedRequest? = null
         makeReporter(HttpStatusCode.Created) { captured = it }.reportCrash("notes", "stacktrace")
-        assertEquals("token $token", captured?.authHeader)
+        assertEquals("Bearer $token", captured?.authHeader)
     }
 
     // --- body content ---

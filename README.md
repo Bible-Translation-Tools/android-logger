@@ -55,14 +55,72 @@ List<LogEntry> logsEntries = <Logger.getLogEntries();
 Logger.flush();
 ```
 
-To send reports to GitHub, use GithubReporter class by specifying the platform context, oauth token and repo url
+## Reporting Crashes and Bugs
 
-```Android
+Use `HttpReporter` to send crash and bug reports to any HTTP endpoint.
+
+### Create a context
+
+```kotlin
+// Android
 val context = application
-val reporter = GithubReporter(url, token, context)
+
+// Desktop
+val context = Context(versionName = "1.6.0", udid = "build-123")
 ```
 
-```Desktop
-val context = Context(versionName = "1.6.0", udid = "build-123")
-val reporter = GithubReporter(url, token, context)
+### Choose an auth strategy
+
+**Bearer token** (GitHub, GitLab, most REST APIs)
+```kotlin
+val reporter = HttpReporter.bearer(
+    url = "https://api.github.com/repos/owner/repo/issues",
+    token = "your-token",
+    context = context
+)
+```
+
+**API key header**
+```kotlin
+val reporter = HttpReporter.apiKey(
+    url = "https://your-api.com/issues",
+    headerName = "X-Api-Key",
+    key = "your-key",
+    context = context
+)
+```
+
+**No auth** (internal endpoints)
+```kotlin
+val reporter = HttpReporter.noAuth(
+    url = "https://internal.example.com/issues",
+    context = context
+)
+```
+
+**Custom** (multipart, URL tokens, multiple headers, etc.)
+```kotlin
+val reporter = HttpReporter(url, context) { title, body ->
+    header("User-Agent", "MyApp/1.0")
+    contentType(ContentType.MultiPart.FormData)
+    setBody(MultiPartFormDataContent(formData {
+        append("title", title)
+        append("content", body)
+        append("sender[email]", userEmail)
+    }))
+}
+```
+
+### Send reports
+
+```kotlin
+// Crash with stacktrace string
+reporter.reportCrash(notes = "user description", stacktrace = stacktraceString)
+
+// Crash with stacktrace file
+reporter.reportCrash(notes = "user description", stacktraceFile = file, logFile = logFile)
+
+// Bug report
+reporter.reportBug(notes = "user description", log = logString)
+reporter.reportBug(notes = "user description", logFile = logFile)
 ```
