@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.bibletranslationtools"
-version = "3.0.2"
+version = "3.0.3"
 
 kotlin {
     jvmToolchain(11)
@@ -22,8 +22,8 @@ kotlin {
                 implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0"
                 implementation 'io.ktor:ktor-client-core:3.5.0'
                 implementation 'io.ktor:ktor-client-okhttp:3.5.0'
-                implementation 'io.ktor:ktor-client-content-negotiation:3.4.3'
-                implementation 'io.ktor:ktor-serialization-kotlinx-json:3.4.3'
+                implementation 'io.ktor:ktor-client-content-negotiation:3.5.0'
+                implementation 'io.ktor:ktor-serialization-kotlinx-json:3.5.0'
             }
         }
 

@@ -6,7 +6,6 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
@@ -15,6 +14,8 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
+
+data class ReporterError(val code: Int, val message: String)
 
 @Serializable
 private data class JsonBody(val title: String, val body: String)
@@ -31,6 +32,10 @@ class HttpReporter(
     private val client: HttpClient = defaultClient(),
     private val configureRequest: HttpRequestBuilder.(title: String, body: String) -> Unit
 ) {
+    private var _lastError: ReporterError? = null
+
+    fun getLastResponse(): ReporterError? = _lastError
+
     companion object {
         private const val MAX_TITLE_LENGTH = 50
         private const val DEFAULT_CRASH_TITLE = "crash report"
@@ -69,9 +74,21 @@ class HttpReporter(
         }
     }
 
-    private suspend fun submit(title: String, body: String): HttpResponse {
-        return client.post(url) {
-            configureRequest(title, body)
+    private suspend fun submit(title: String, body: String): Boolean {
+        return runCatching {
+            val response = client.post(url) {
+                configureRequest(title, body)
+            }
+            if (!response.status.isSuccess()) {
+                _lastError = ReporterError(response.status.value, response.status.description)
+                false
+            } else {
+                _lastError = null
+                true
+            }
+        }.getOrElse { e ->
+            _lastError = ReporterError(-1, e.message ?: "Unknown error")
+            false
         }
     }
 
@@ -91,7 +108,7 @@ class HttpReporter(
             append(getStacktraceBlock(stacktrace))
             append(getLogBlock(log))
         }
-        return submit(title, body).status.isSuccess()
+        return submit(title, body)
     }
 
     suspend fun reportBug(notes: String, logFile: File? = null): Boolean {
@@ -108,7 +125,7 @@ class HttpReporter(
             append(getEnvironmentBlock(context))
             append(getLogBlock(log))
         }
-        return submit(title, body).status.isSuccess()
+        return submit(title, body)
     }
 
     private fun getLogBlock(log: String?): String = buildString {

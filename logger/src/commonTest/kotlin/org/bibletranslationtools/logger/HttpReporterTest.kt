@@ -15,7 +15,12 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class HttpReporterTest {
 
@@ -77,6 +82,33 @@ class HttpReporterTest {
     @Test
     fun reportBugReturnsFalseOn500() = runTest {
         assertFalse(makeReporter(HttpStatusCode.InternalServerError).reportBug("notes", "log"))
+    }
+
+    // --- getLastResponse ---
+
+    @Test
+    fun getLastResponseIsNullOnSuccess() = runTest {
+        val reporter = makeReporter(HttpStatusCode.Created)
+        reporter.reportCrash("notes", "stacktrace")
+        assertNull(reporter.getLastResponse())
+    }
+
+    @Test
+    fun getLastResponseHasCodeOnHttpError() = runTest {
+        val reporter = makeReporter(HttpStatusCode.UnprocessableEntity)
+        reporter.reportCrash("notes", "stacktrace")
+        val error = reporter.getLastResponse()
+        assertNotNull(error)
+        assertEquals(422, error!!.code)
+    }
+
+    @Test
+    fun getLastResponseHasCodeOnServerError() = runTest {
+        val reporter = makeReporter(HttpStatusCode.InternalServerError)
+        reporter.reportBug("notes", "log")
+        val error = reporter.getLastResponse()
+        assertNotNull(error)
+        assertEquals(500, error!!.code)
     }
 
     // --- request details ---
